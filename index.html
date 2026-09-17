@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Error Detective</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            background: #07111f;
+            overflow-x: hidden;
+        }
+
+        /* Animated background code */
+        #codeRain {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(7, 17, 31, 0.85), rgba(7, 17, 31, 0.95)),
+                #07111f;
+        }
+
+        .falling-code {
+            position: absolute;
+            top: -100px;
+            color: #35e58b;
+            opacity: 0.28;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            white-space: nowrap;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(-120px);
+            }
+
+            to {
+                transform: translateY(110vh);
+            }
+        }
+
+        .container {
+            width: min(1000px, 94%);
+            margin: 30px auto;
+        }
+
+        .game-card {
+            padding: 28px;
+            border: 1px solid #1d4260;
+            border-radius: 18px;
+            background: rgba(8, 24, 42, 0.94);
+            box-shadow: 0 0 35px rgba(0, 200, 255, 0.12);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #63d9ff;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #b6c9d8;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 22px 0;
+            padding: 14px;
+            border-radius: 10px;
+            background: #0d2238;
+            color: #d9f6ff;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            height: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #172e44;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #28d7ff, #35e58b);
+            transition: width 0.4s ease;
+        }
+
+        .instruction {
+            margin-bottom: 12px;
+            color: #f5d77a;
+            font-weight: bold;
+        }
+
+        .code-box {
+            min-height: 220px;
+            padding: 20px;
+            border: 1px solid #31546c;
+            border-radius: 10px;
+            background: #020a12;
+            box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
+        }
+
+        pre {
+            margin: 0;
+            color: #d8faff;
+            font-family: "Courier New", monospace;
+            font-size: 17px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        button {
+            padding: 13px;
+            border: 0;
+            border-radius: 8px;
+            color: #ffffff;
+            background: #17648a;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: #238db9;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .syntax-btn {
+            background: #b05b36;
+        }
+
+        .runtime-btn {
+            background: #7a4fa3;
+        }
+
+        .logic-btn {
+            background: #267e59;
+        }
+
+        .answer-panel {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #376a89;
+            border-radius: 10px;
+            background: #0d2238;
+        }
+
+        .answer-panel.visible {
+            display: block;
+            animation: appear 0.35s ease;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 110px;
+            margin-top: 10px;
+            padding: 12px;
+            resize: vertical;
+            border: 1px solid #4c718a;
+            border-radius: 8px;
+            outline: none;
+            color: #eaffff;
+            background: #020a12;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+        }
+
+        textarea:focus {
+            border-color: #35e58b;
+        }
+
+        .submit-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        #feedback {
+            min-height: 25px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #52ef9b;
+        }
+
+        .error {
+            color: #ff8585;
+        }
+
+        .hint {
+            margin-top: 12px;
+            color: #f5d77a;
+            font-size: 14px;
+        }
+
+        #finishScreen {
+            display: none;
+            text-align: center;
+        }
+
+        #finishScreen h2 {
+            color: #52ef9b;
+        }
+
+        .restart {
+            margin-top: 15px;
+            background: #238db9;
+        }
+
+        @media (max-width: 650px) {
+            .game-card {
+                padding: 18px;
+            }
+
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+
+            pre {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="codeRain"></div>
+
+    <main class="container">
+        <section class="game-card" id="gameScreen">
+            <h1>🕵️ Code Error Detective</h1>
+
+            <p class="subtitle">
+                Identify the error, correct the code, and keep the program running!
+            </p>
+
+            <div class="top-bar">
+                <span>Round: <span id="roundNumber">1</span> / 20</span>
+                <span>Score: <span id="score">0</span></span>
+                <span>Lives: <span id="lives">3</span></span>
+            </div>
+
+            <div class="progress-container">
+                <div id="progressBar"></div>
+            </div>
+
+            <p class="instruction">
+                Step 1: Identify the type of error.
+            </p>
+
+            <div class="code-box">
+                <pre id="codeDisplay"></pre>
+            </div>
+
+            <div class="buttons">
+                <button class="syntax-btn error-type-button" data-type="syntax">
+                    Syntax Error
+                </button>
+
+                <button class="runtime-btn error-type-button" data-type="runtime">
+                    Runtime Error
+                </button>
+
+                <button class="logic-btn error-type-button" data-type="logic">
+                    Logic Error
+                </button>
+            </div>
+
+            <div class="answer-panel" id="answerPanel">
+                <p class="instruction">
+                    Step 2: Fix the error in the code.
+                </p>
+
+                <p id="correctionInstruction"></p>
+
+                <textarea
+                    id="answerBox"
+                    placeholder="Type the corrected line or corrected code here..."
+                ></textarea>
+
+                <div class="submit-row">
+                    <button id="submitAnswer">Check Correction</button>
+                    <button id="hintButton">Show Hint</button>
+                </div>
+
+                <div id="hintText" class="hint"></div>
+            </div>
+
+            <div id="feedback"></div>
+        </section>
+
+        <section class="game-card" id="finishScreen">
+            <h2>🎉 Game Complete!</h2>
+            <p id="finalMessage"></p>
+            <button class="restart" id="restartButton">Play Again</button>
+        </section>
+    </main>
+
+    <script>
+        const TOTAL_ROUNDS = 20;
+
+        let currentRound = 1;
+        let score = 0;
+        let lives = 3;
+        let currentProblem = null;
+        let selectedErrorType = null;
+        let questionPool = [];
+
+        const codeDisplay = document.getElementById("codeDisplay");
+        const roundNumber = document.getElementById("roundNumber");
+        const scoreDisplay = document.getElementById("score");
+        const livesDisplay = document.getElementById("lives");
+        const progressBar = document.getElementById("progressBar");
+        const answerPanel = document.getElementById("answerPanel");
+        const answerBox = document.getElementById("answerBox");
+        const feedback = document.getElementById("feedback");
+        const hintText = document.getElementById("hintText");
+        const correctionInstruction =
+            document.getElementById("correctionInstruction");
+
+        /*
+            Each problem has:
+            - type: syntax, runtime, or logic
+            - code: code shown to the student
+            - answers: accepted corrections
+            - instruction: what the student should fix
+            - hint: optional clue
+        */
+        const problemTemplates = [
+            {
+                type: "syntax",
+                code: `x = 10
+
+if x > 5
+    print("x is greater than 5")`,
+                answers: [`if x > 5:`],
+                instruction: "Correct the line containing the if statement.",
+                hint: "An if statement needs a colon at the end."
+            },
+
+            {
+                type: "syntax",
+                code: `for i in range(5)
+    print(i)`,
+                answers: [`for i in range(5):`],
+                instruction: "Correct the for statement.",
+                hint: "A for statement also needs a colon."
+            },
+
+            {
+                type: "syntax",
+                code: `name = "Sam"
+print("Hello " + name`,
+                answers: [`print("Hello " + name)`,
+                    `print("Hello " + name)`],
+                instruction: "Correct the print statement.",
+                hint: "Check that all brackets are closed."
+            },
+
+            {
+                type: "syntax",
+                code: `age = 15
+
+if age >= 13:
+print("Teenager")`,
+                answers: [`    print("Teenager")`,
+                    `print("Teenager")`],
+                instruction: "Correct the indentation of the print statement.",
+                hint: "The code inside an if statement must be indented."
+            },
+
+            {
+                type: "runtime",
+                code: `numbers = [4, 8, 12]
+
+print(numbers[5])`,
+                answers: [
+                    `print(numbers[0])`,
+                    `print(numbers[1])`,
+                    `print(numbers[2])`,
+                    `print(numbers[-1])`
+                ],
+                instruction: "Change the index so the program prints a number in the list.",
+                hint: "The list has indexes 0, 1, and 2."
+            },
+
+            {
+                type: "runtime",
+                code: `number = 10
+answer = number / 0
+print(answer)`,
+                answers: [
+                    `answer = number / 2`,
+                    `answer = number / 1`,
+                    `answer = number + 0`
+                ],
+                instruction: "Correct the calculation so that it does not divide by zero.",
+                hint: "A number cannot be divided by zero."
+            },
+
+            {
+                type: "runtime",
+                code: `age = "14"
+next_age = age + 1
+print(next_age)`,
+                answers: [
+                    `age = 14`,
+                    `next_age = int(age) + 1`
+                ],
+                instruction: "Correct the code so that a number is added to a number.",
+                hint: "The value '14' is currently text, not a number."
+            },
+
+            {
+                type: "runtime",
+                code: `student = {"name": "Maya"}
+
+print(student["age"])`,
+                answers: [
+                    `print(student["name"])`,
+                    `student["age"] = 14`
+                ],
+                instruction: "Use a key that exists in the dictionary.",
+                hint: "The dictionary contains the key 'name'."
+            },
+
+            {
+                type: "logic",
+                code: `number = 8
+
+if number > 10:
+    print("Small")
+else:
+    print("Large")`,
+                answers: [
+                    `if number < 10:`,
+                    `if number <= 10:`
+                ],
+                instruction: "Correct the condition so that 8 is classified as small.",
+                hint: "The condition should check whether the number is less than 10."
+            },
+
+            {
+                type: "logic",
+                code: `numbers = [2, 4, 6]
+total = 0
+
+for number in numbers:
+    total = total - number
+
+print(total)`,
+                answers: [
+                    `total = total + number`
+                ],
+                instruction: "Correct the line so the program calculates the sum.",
+                hint: "To calculate a sum, add each number to the total."
+            },
+
+            {
+                type: "logic",
+                code: `score = 75
+
+if score >= 50:
+    print("Fail")
+else:
+    print("Pass")`,
+                answers: [
+                    `print("Pass")`,
+                    `print("Pass")`
+                ],
+                instruction: "Correct the output messages.",
+                hint: "A score of 50 or more should pass."
+            },
+
+            {
+                type: "logic",
+                code: `count = 1
+
+while count <= 3:
+    print(count)
+    count = count - 1`,
+                answers: [
+                    `count = count + 1`
+                ],
+                instruction: "Correct the line so the loop eventually stops.",
+                hint: "The count must increase, not decrease."
+            }
+        ];
+
+        function normalise(text) {
+            return text
+                .replace(/[“”]/g, '"')
+                .replace(/[‘’]/g, "'")
+                .replace(/\r/g, "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLowerCase();
+        }
+
+        function shuffle(array) {
+            return array
+                .map(value => ({ value, sort: Math.random() }))
+                .sort((a, b) => a.sort - b.sort)
+                .map(item => item.value);
+        }
+
+        function createQuestionPool() {
+            const shuffled = shuffle(problemTemplates);
+
+            /*
+                There are 12 templates. The pool repeats and randomises them
+                until there are at least 20 rounds.
+            */
+            questionPool = [];
+
+            while (questionPool.length < TOTAL_ROUNDS) {
+                questionPool = questionPool.concat(shuffle(shuffled));
+            }
+
+            questionPool = questionPool.slice(0, TOTAL_ROUNDS);
+        }
+
+        function loadProblem() {
+            currentProblem = questionPool[currentRound - 1];
+            selectedErrorType = null;
+
+            roundNumber.textContent = currentRound;
+            scoreDisplay.textContent = score;
+            livesDisplay.textContent = lives;
+            progressBar.style.width =
+                `${((currentRound - 1) / TOTAL_ROUNDS) * 100}%`;
+
+            codeDisplay.textContent = currentProblem.code;
+
+            answerPanel.classList.remove("visible");
+            answerBox.value = "";
+            hintText.textContent = "";
+            feedback.textContent = "";
+            feedback.className = "";
+
+            document.querySelectorAll(".error-type-button").forEach(button => {
+                button.disabled = false;
+                button.style.outline = "none";
+            });
+        }
+
+        function chooseErrorType(type, clickedButton) {
+            selectedErrorType = type;
+
+            document.querySelectorAll(".error-type-button").forEach(button => {
+                button.disabled = true;
+            });
+
+            clickedButton.style.outline = "3px solid #ffffff";
+
+            if (type !== currentProblem.type) {
+                lives--;
+                livesDisplay.textContent = lives;
+
+                feedback.textContent =
+                    "That is not correct. Try to identify the error type carefully.";
+                feedback.className = "error";
+
+                if (lives <= 0) {
+                    endGame("You ran out of lives.");
+                    return;
+                }
+
+                setTimeout(() => {
+                    document.querySelectorAll(".error-type-button").forEach(button => {
+                        button.disabled = false;
+                        button.style.outline = "none";
+                    });
+
+                    feedback.textContent = "";
+                }, 1300);
+
+                return;
+            }
+
+            score++;
+            scoreDisplay.textContent = score;
+
+            feedback.textContent =
+                "Correct! Now type the correction below.";
+            feedback.className = "success";
+
+            correctionInstruction.textContent = currentProblem.instruction;
+            answerPanel.classList.add("visible");
+            answerBox.focus();
+        }
+
+        function checkCorrection() {
+            const studentAnswer = normalise(answerBox.value);
+
+            const isCorrect = currentProblem.answers.some(answer => {
+                return normalise(answer) === studentAnswer;
+            });
+
+            if (isCorrect) {
+                score += 2;
+                scoreDisplay.textContent = score;
+                progressBar.style.width =
+                    `${(currentRound / TOTAL_ROUNDS) * 100}%`;
+
+                feedback.textContent =
+                    "Excellent! The error has been fixed.";
+                feedback.className = "success";
+
+                document.getElementById("submitAnswer").disabled = true;
+
+                setTimeout(() => {
+                    if (currentRound >= TOTAL_ROUNDS) {
+                        endGame("You completed all 20 challenges!");
+                    } else {
+                        currentRound++;
+                        document.getElementById("submitAnswer").disabled = false;
+                        loadProblem();
+                    }
+                }, 1200);
+            } else {
+                lives--;
+                livesDisplay.textContent = lives;
+
+                feedback.textContent =
+                    "That correction is not accepted. Check the code and try again.";
+                feedback.className = "error";
+
+                if (lives <= 0) {
+                    endGame("You ran out of lives.");
+                }
+            }
+        }
+
+        function showHint() {
+            hintText.textContent = "Hint: " + currentProblem.hint;
+        }
+
+        function endGame(message) {
+            document.getElementById("gameScreen").style.display = "none";
+            document.getElementById("finishScreen").style.display = "block";
+
+            document.getElementById("finalMessage").textContent =
+                `${message} Your final score is ${score} points.`;
+        }
+
+        function restartGame() {
+            currentRound = 1;
+            score = 0;
+            lives = 3;
+
+            document.getElementById("gameScreen").style.display = "block";
+            document.getElementById("finishScreen").style.display = "none";
+
+            createQuestionPool();
+            loadProblem();
+        }
+
+        function createCodeRain() {
+            const codeLines = [
+                "if score >= 50:",
+                "for item in list:",
+                "print(name)",
+                "total = total + number",
+                "while count < 10:",
+                "numbers = [1, 2, 3]",
+                "def calculate():",
+                "return answer",
+                "try:",
+                "except:",
+                "student.name",
+                "x = x + 1"
+            ];
+
+            const rain = document.getElementById("codeRain");
+
+            for (let i = 0; i < 35; i++) {
+                const line = document.createElement("div");
+
+                line.className = "falling-code";
+                line.textContent =
+                    codeLines[Math.floor(Math.random() * codeLines.length)];
+
+                line.style.left = Math.random() * 100 + "%";
+                line.style.animationDuration = 8 + Math.random() * 12 + "s";
+                line.style.animationDelay = -Math.random() * 15 + "s";
+                line.style.fontSize = 12 + Math.random() * 10 + "px";
+
+                rain.appendChild(line);
+            }
+        }
+
+        document.querySelectorAll(".error-type-button").forEach(button => {
+            button.addEventListener("click", () => {
+                chooseErrorType(button.dataset.type, button);
+            });
+        });
+
+        document.getElementById("submitAnswer")
+            .addEventListener("click", checkCorrection);
+
+        document.getElementById("hintButton")
+            .addEventListener("click", showHint);
+
+        document.getElementById("restartButton")
+            .addEventListener("click", restartGame);
+
+        answerBox.addEventListener("keydown", event => {
+            if (event.ctrlKey && event.key === "Enter") {
+                checkCorrection();
+            }
+        });
+
+        createCodeRain();
+        createQuestionPool();
+        loadProblem();
+    </script>
+</body>
+</html>
